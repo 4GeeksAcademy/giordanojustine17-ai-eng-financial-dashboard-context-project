@@ -207,10 +207,11 @@ interface AnomalyAlertsProps {
   - **Increase Ratio:** formatted as percentage (e.g., "+30.5%")
 
 - **Visual severity gradient based on `increase_ratio`:**
-  - 0.01 < ratio ≤ 0.25: green/neutral styling
-  - 0.25 < ratio ≤ 0.50: yellow/warning styling
-  - 0.50 < ratio ≤ 1.0: orange/caution styling
-  - ratio > 1.0: red/critical styling
+  - 0.01 < ratio ≤ 0.25: low-severity styling using the existing `--income-badge` and `--income-badge-fg` tokens
+  - 0.25 < ratio ≤ 0.50: warning styling using existing theme tokens such as `--outcome-badge` and `--outcome-badge-fg`
+  - 0.50 < ratio ≤ 1.0: stronger caution styling using the existing outcome/destructive theme tokens
+  - ratio > 1.0: critical styling using `--destructive` and `--destructive-foreground`
+  - Do not hardcode severity colors or introduce CSS variables not defined in `frontend/src/index.css`.
 
 #### Baseline Discrepancy Notice
 **JSDoc and inline documentation must include:**
@@ -519,9 +520,9 @@ interface IncomeComparisonProps {
 ### Imports Required
 
 ```typescript
-// From spec files (all referenced exports exist)
-import { type DateRangeFilter, type AlertsParams, type GroupBy } from "@/specs/param-types";
-import { type AlertEntry, type CategoryEntry, type BusinessType } from "@/specs/api-types";
+// Specs are at frontend/specs (outside src/ and therefore outside the @/* alias).
+import { type DateRangeFilter, type AlertsParams, type GroupBy } from "../../../specs/param-types";
+import { type AlertEntry, type CategoryEntry, type BusinessType } from "../../../specs/api-types";
 
 // From existing components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -529,7 +530,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/financial-utils";
 ```
 
-`formatCurrency` currently formats USD with zero fractional digits (`maximumFractionDigits: 0`); cents-bearing examples require an explicit two-decimal formatter if that display is desired. `Card`, `CardContent`, `CardHeader`, `CardTitle`, `CardDescription`, and `Skeleton` are exported by the cited UI files. `DateRangeFilter`, `AlertsParams`, and `GroupBy` exist in `param-types.ts`; `AlertEntry`, `CategoryEntry`, and `BusinessType` exist in `api-types.ts`. Do not import a `MetricsSummaryItem` response type from the frontend specs; its response shape is documented above, but no matching frontend export currently exists.
+`formatCurrency` currently formats USD with zero fractional digits (`maximumFractionDigits: 0`); cents-bearing examples require an explicit two-decimal formatter if that display is desired. `Card`, `CardContent`, `CardHeader`, `CardTitle`, `CardDescription`, and `Skeleton` are exported by the cited UI files. `DateRangeFilter`, `AlertsParams`, and `GroupBy` exist in `frontend/specs/param-types.ts`; `AlertEntry`, `CategoryEntry`, and `BusinessType` exist in `frontend/specs/api-types.ts`. The `@/*` alias resolves only within `frontend/src`, so imports from `frontend/specs` use the relative paths shown above. `formatCurrency` exists in `src/lib/financial-utils.ts`. Do not import a `MetricsSummaryItem` response type from the frontend specs; its response shape is documented above, but no matching frontend export currently exists.
 
 ### Key Rules to Follow
 
@@ -577,5 +578,7 @@ import { formatCurrency } from "@/lib/financial-utils";
 | DateRangeFilter | Date range selection with validation | 5 | 1 | Local validation state only |
 | AnomalyAlerts | Display spending anomalies with controls | 10 | 4 (1 optional) | Parent owns data/filters; local input validation allowed |
 | IncomeComparison | Compare B2B vs B2C top income categories | 9 | 1 optional | Parent owns data/filters |
+
+Props counts include optional props. Callback counts include optional callbacks; thus AnomalyAlerts has three required callbacks plus one optional callback, and IncomeComparison has one optional callback.
 
 Components make no API calls. The parent owns API data and applied filter state and passes those values through props. Components may use local UI state for concerns such as input editing and validation feedback; that local state does not replace the parent as source of truth for fetched data or applied filters.
